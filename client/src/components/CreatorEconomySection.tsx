@@ -115,7 +115,7 @@ export default function CreatorEconomySection() {
             onMouseEnter={() => setActiveCard(0)}
             onMouseLeave={() => setActiveCard(null)}
           >
-            <div className="absolute -top-4 left-6">
+            <div className="absolute top-1 left-6">
               <div className={`w-14 h-14 bg-primary rounded-xl flex items-center justify-center shadow-lg transition-transform duration-300 ${
                 activeCard === 0 ? 'scale-110 rotate-6' : ''
               }`}>
@@ -166,7 +166,7 @@ export default function CreatorEconomySection() {
             onMouseEnter={() => setActiveCard(1)}
             onMouseLeave={() => setActiveCard(null)}
           >
-            <div className="absolute -top-4 left-6">
+            <div className="absolute top-1 left-6">
               <div className={`w-14 h-14 bg-destructive rounded-xl flex items-center justify-center shadow-lg transition-transform duration-300 ${
                 activeCard === 1 ? 'scale-110 -rotate-6' : ''
               }`}>

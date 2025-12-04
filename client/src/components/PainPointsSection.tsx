@@ -1,8 +1,6 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import InteractiveCard from './InteractiveCard';
 import AnimatedBackground from './AnimatedBackground';
 import {
@@ -32,60 +30,89 @@ const painPoints = [
 ];
 
 export default function PainPointsSection() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerView, setItemsPerView] = useState(3);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const updateItemsPerView = () => {
-      if (window.innerWidth < 640) setItemsPerView(1);
-      else if (window.innerWidth < 1024) setItemsPerView(2);
-      else setItemsPerView(3);
-    };
-    updateItemsPerView();
-    window.addEventListener('resize', updateItemsPerView);
-    return () => window.removeEventListener('resize', updateItemsPerView);
-  }, []);
+    if (!sectionRef.current) return;
 
-  const maxIndex = Math.max(0, painPoints.length - itemsPerView);
-
-  useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        '.pain-heading',
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' },
-        }
-      );
+      // Clear/ensure initial states so Tailwind doesn't fight GSAP
+      gsap.set('.pain-heading', { opacity: 0, y: 40 });
+      gsap.set('.pain-sub', { opacity: 0, y: 18 });
+      gsap.set('.pain-note', { opacity: 0, y: 12 });
+      gsap.set('.pain-card', { opacity: 0, y: 30, scale: 0.995 });
+      gsap.set('.pain-icon', { scale: 0.98, y: 0, opacity: 0 });
+      gsap.set('.pain-title', { y: 6, opacity: 0 });
+      gsap.set('.pain-desc', { x: -8, opacity: 0 });
+
+      // Heading timeline
+      gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: 'top 85%',
+          // markers: true,
+        },
+      })
+      .to('.pain-heading', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0)
+      .to('.pain-sub', { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 0.08)
+      .to('.pain-note', { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 0.14);
+
+      // Cards stagger timeline (single timeline for reliability)
+      const cardsTimeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: 'top 78%',
+          // markers: true,
+        },
+      });
+
+      cardsTimeline.to('.pain-card', {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.7,
+        ease: 'power3.out',
+        stagger: { each: 0.12, from: 'start' },
+      });
+
+      // Per-card micro animations (icons, titles, desc)
+      gsap.utils.toArray<HTMLElement>('.pain-card').forEach((card) => {
+        const icon = card.querySelectorAll<HTMLElement>('.pain-icon');
+        const title = card.querySelectorAll<HTMLElement>('.pain-title');
+        const desc = card.querySelectorAll<HTMLElement>('.pain-desc');
+
+        // local timeline when the card enters view
+        gsap.timeline({
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 92%',
+            toggleActions: 'play none none reverse',
+          },
+        })
+        .to(icon, { opacity: 1, scale: 1.02, duration: 0.36, ease: 'power2.out' })
+        .to(title, { y: 0, opacity: 1, duration: 0.32, ease: 'power2.out' }, '-=0.18')
+        .to(desc, { x: 0, opacity: 1, duration: 0.34, ease: 'power2.out' }, '-=0.26');
+      });
+
+      // Hover micro-interactions for each card: gentle lift & shadow
+      gsap.utils.toArray<HTMLElement>('.pain-card').forEach((card) => {
+        const enter = () => gsap.to(card, { y: -6, boxShadow: '0 18px 40px rgba(2,6,23,0.12)', duration: 0.28, ease: 'power2.out' });
+        const leave = () => gsap.to(card, { y: 0, boxShadow: '0 6px 18px rgba(2,6,23,0.06)', duration: 0.45, ease: 'power3.out' });
+
+        card.addEventListener('mouseenter', enter);
+        card.addEventListener('mouseleave', leave);
+
+        // for keyboard accessibility: focus / blur
+        card.addEventListener('focusin', enter);
+        card.addEventListener('focusout', leave);
+      });
+
+      // Refresh ScrollTrigger measurements
+      ScrollTrigger.refresh();
     }, sectionRef);
 
     return () => ctx.revert();
   }, []);
-
-  useEffect(() => {
-    if (!trackRef.current) return;
-    const itemWidth = 100 / itemsPerView;
-    gsap.to(trackRef.current, {
-      x: `-${currentIndex * itemWidth}%`,
-      duration: 0.6,
-      ease: 'power3.out',
-    });
-  }, [currentIndex, itemsPerView]);
-
-  const goNext = () => setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
-  const goPrev = () => setCurrentIndex((prev) => Math.max(prev - 1, 0));
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [maxIndex]);
 
   return (
     <section
@@ -97,89 +124,52 @@ export default function PainPointsSection() {
       <AnimatedBackground variant="dots" />
 
       <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
-        <div className="text-center mb-16 pain-heading">
-          <p className="text-primary font-semibold uppercase tracking-wider mb-4">
-            We See Your Struggle
-          </p>
-          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-            Stop Managing Excel Sheets.
-            <br />
-            <span className="text-primary">Start Managing Impact.</span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+        <div className="text-center mb-16">
+          <div className="pain-heading">
+            <p className="text-primary font-semibold uppercase tracking-wider mb-4">
+              We See Your Struggle
+            </p>
+            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
+              Stop Managing Excel Sheets.
+              <br />
+              <span className="text-primary">Start Managing Impact.</span>
+            </h2>
+          </div>
+
+          <p className="pain-sub text-muted-foreground text-lg max-w-2xl mx-auto">
             If you're scaling creator campaigns, you know the hidden costs of chaos. We
             engineered Mevia to eliminate the manual complexity that kills your ROI.
           </p>
         </div>
 
-        <p className="text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-8">
+        <p className="pain-note text-center text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-8">
           Operational Chaos We End Today
         </p>
 
-        <div className="relative px-12">
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background shadow-lg"
-            onClick={goPrev}
-            disabled={currentIndex === 0}
-            data-testid="pain-carousel-prev"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-
-          <div className="overflow-hidden">
-            <div
-              ref={trackRef}
-              className="flex gap-6"
-              style={{ width: `${(painPoints.length / itemsPerView) * 100}%` }}
-            >
-              {painPoints.map((point, index) => (
-                <div
+        <div className="relative px-6">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {painPoints.map((point, index) => {
+              const Icon = point.icon;
+              return (
+                <InteractiveCard
                   key={index}
-                  className="flex-shrink-0"
-                  style={{ width: `calc(${100 / painPoints.length}% - ${(6 * (painPoints.length - 1)) / painPoints.length}px)` }}
+                  tabIndex={0}
+                  className="pain-card p-6 h-full border-border/50"
+                  data-testid={`card-pain-point-${index}`}
                 >
-                  <InteractiveCard
-                    className="p-6 h-full border-border/50"
-                    data-testid={`card-pain-point-${index}`}
-                  >
-                    <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-all duration-300">
-                      <point.icon className="w-7 h-7 text-primary" />
-                    </div>
-                    <h3 className="font-heading font-semibold text-lg text-foreground mb-2">
-                      {point.title}
-                    </h3>
-                    <p className="text-muted-foreground text-sm">{point.description}</p>
-                  </InteractiveCard>
-                </div>
-              ))}
-            </div>
+                  <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-all duration-300 pain-icon">
+                    <Icon className="w-7 h-7 text-primary" />
+                  </div>
+
+                  <h3 className="font-heading font-semibold text-lg text-foreground mb-2 pain-title">
+                    {point.title}
+                  </h3>
+
+                  <p className="text-muted-foreground text-sm pain-desc">{point.description}</p>
+                </InteractiveCard>
+              );
+            })}
           </div>
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background shadow-lg"
-            onClick={goNext}
-            disabled={currentIndex >= maxIndex}
-            data-testid="pain-carousel-next"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </Button>
-        </div>
-
-        <div className="flex items-center justify-center gap-2 mt-8">
-          {Array.from({ length: maxIndex + 1 }).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex ? 'w-8 bg-primary' : 'w-2 bg-primary/30 hover:bg-primary/50'
-              }`}
-              data-testid={`pain-dot-${index}`}
-            />
-          ))}
         </div>
 
         <div className="text-center mt-12">

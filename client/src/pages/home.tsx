@@ -7,6 +7,7 @@ import CoreSection from '@/components/CoreSection';
 import MetricsSection from '@/components/MetricsSection';
 import EcosystemSection from '@/components/EcosystemSection';
 import FeaturesSection from '@/components/FeaturesSection';
+import Succced from '@/components/Succced';
 import BeneficiariesSection from '@/components/BeneficiariesSection';
 import CreatorEconomySection from '@/components/CreatorEconomySection';
 import PricingSection from '@/components/PricingSection';
@@ -59,6 +60,7 @@ export default function Home() {
         <MetricsSection />
         <EcosystemSection />
         <FeaturesSection />
+  <Succced />
         <BeneficiariesSection />
         <CreatorEconomySection />
         <PricingSection />

@@ -14,7 +14,7 @@ const products = [
     icon: Layers,
     title: 'Mevia Studio',
     subtitle: 'The Now',
-    status: 'LIVE NOW',
+    status: 'LAUNCHING SOON',
     isLive: true,
     description: 'A powerful creator-marketing workspace for brands & agencies.',
     features: [

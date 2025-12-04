@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,41 +71,67 @@ export default function WaitlistSection() {
     return () => ctx.revert();
   }, []);
 
+  // -----------------------
+  // DROP-IN handleSubmit for Google Sheets (Apps Script)
+  // -----------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Replace with your actual Google Apps Script Web App URL (deploy -> web app)
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1MOdM_0PRi0iuMGdTdWBmgShAdowg93_Z0yXDxxyrlaRM6GioTvheNjodisJDSJne/exec';
+
+    // keep your GSAP UI shrink effect
     gsap.to(formRef.current, {
       scale: 0.98,
       duration: 0.2,
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Google Apps Script web app expects a POST.
+      // mode: 'no-cors' is typically required so the browser will not block the request.
+      // Note: with 'no-cors' you cannot read the response body; we treat success as "request completed".
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-    setIsLoading(false);
-    setIsSubmitted(true);
+      // Treat as success if no exception thrown
+      setIsLoading(false);
+      setIsSubmitted(true);
 
-    gsap.fromTo(
-      '.success-content',
-      { opacity: 0, scale: 0.5, rotation: -10 },
-      { opacity: 1, scale: 1, rotation: 0, duration: 0.6, ease: 'back.out(1.7)' }
-    );
+      // your success animations
+      gsap.fromTo(
+        '.success-content',
+        { opacity: 0, scale: 0.5, rotation: -10 },
+        { opacity: 1, scale: 1, rotation: 0, duration: 0.6, ease: 'back.out(1.7)' }
+      );
 
-    gsap.fromTo(
-      '.confetti',
-      { opacity: 0, y: 0, scale: 0 },
-      {
-        opacity: 1,
-        y: 'random(-100, -200)',
-        scale: 1,
-        rotation: 'random(-180, 180)',
-        duration: 1,
-        stagger: 0.05,
-        ease: 'power2.out',
-      }
-    );
+      gsap.fromTo(
+        '.confetti',
+        { opacity: 0, y: 0, scale: 0 },
+        {
+          opacity: 1,
+          y: 'random(-100, -200)',
+          scale: 1,
+          rotation: 'random(-180, 180)',
+          duration: 1,
+          stagger: 0.05,
+          ease: 'power2.out',
+        }
+      );
 
-    console.log('Form submitted:', formData);
+      console.log('Saved to Google Sheets:', formData);
+    } catch (error) {
+      console.error('Google Sheets submission error:', error);
+      setIsLoading(false);
+      // fallback UX: show an error message (you can improve with toasts)
+      alert('Something went wrong — please try again.');
+    }
   };
 
   return (
@@ -137,8 +163,7 @@ export default function WaitlistSection() {
               Join the Revolution
             </p>
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              Join the Intelligence Revolution.{' '}
-              <span className="text-primary">Secure Your Spot.</span>
+              Join the Intelligence Revolution. <span className="text-primary">Secure Your Spot.</span>
             </h2>
             <p className="text-muted-foreground text-lg">
               Initial customers will be awarded exclusive benefits.
@@ -163,20 +188,13 @@ export default function WaitlistSection() {
                   <CheckCircle2 className="w-12 h-12 text-green-500" />
                   <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
                 </div>
-                <h3 className="font-heading text-2xl font-bold text-foreground mb-3">
-                  You're on the list!
-                </h3>
+                <h3 className="font-heading text-2xl font-bold text-foreground mb-3">You're on the list!</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Thank you for joining the Mevia revolution. We'll be in touch soon with
-                  exclusive early access benefits.
+                  Thank you for joining the Mevia revolution. We'll be in touch soon with exclusive early access benefits.
                 </p>
               </div>
             ) : (
-              <form
-                ref={formRef}
-                onSubmit={handleSubmit}
-                className="waitlist-form space-y-5"
-              >
+              <form ref={formRef} onSubmit={handleSubmit} className="waitlist-form space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className={`form-field space-y-2 transition-all duration-300 ${focusedField === 'name' ? 'scale-[1.02]' : ''}`}>
                     <Label htmlFor="name">Full Name</Label>
@@ -283,8 +301,7 @@ export default function WaitlistSection() {
                 </Button>
 
                 <p className="text-center text-sm text-muted-foreground">
-                  Be among the first to eliminate operational complexity and gain a true
-                  intelligence advantage.
+                  Be among the first to eliminate operational complexity and gain a true intelligence advantage.
                 </p>
               </form>
             )}

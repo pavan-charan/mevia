@@ -104,7 +104,7 @@ export default function HeroSection({ onScrollTo }: HeroSectionProps) {
             data-testid="button-hero-waitlist"
           >
             <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
-            Watch Demo
+            Join Waitlist
           </Button>
         </div>
 

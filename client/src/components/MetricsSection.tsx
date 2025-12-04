@@ -169,7 +169,7 @@ export default function MetricsSection() {
           ))}
         </div>
 
-        <div className="benefits-grid grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+        <div className="benefits-grid grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto">
           {additionalBenefits.map((benefit, index) => (
             <div
               key={index}

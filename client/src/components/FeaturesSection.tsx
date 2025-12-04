@@ -104,15 +104,15 @@ export default function FeaturesSection() {
 
       <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
         <div className="text-center mb-12 features-heading">
-          <p className="text-primary font-semibold uppercase tracking-wider mb-4">
+          {/* <p className="text-primary font-semibold uppercase tracking-wider mb-4">
             Mevia Studio Features
-          </p>
+          </p> */}
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Everything You Need to <span className="text-primary">Succeed</span>
+            Mevia Studio <span className="text-primary">Features</span>
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          {/* <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             A complete toolkit for managing Creator relationships, campaigns, and performance.
-          </p>
+          </p> */}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-5xl mx-auto">

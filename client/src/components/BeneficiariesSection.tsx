@@ -1,9 +1,7 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import AnimatedBackground from './AnimatedBackground';
 import {
   ShoppingBag,
@@ -109,13 +107,13 @@ export default function BeneficiariesSection() {
         </div>
 
         <div className="beneficiaries-grid grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          <BeneficiaryCarousel
+          <BeneficiaryRadial
             title="Brands"
             icon={ShoppingBag}
             items={brands}
             testId="brands"
           />
-          <BeneficiaryCarousel
+          <BeneficiaryRadial
             title="Agencies"
             icon={Megaphone}
             items={agencies}
@@ -126,8 +124,7 @@ export default function BeneficiariesSection() {
     </section>
   );
 }
-
-function BeneficiaryCarousel({
+function BeneficiaryRadial({
   title,
   icon: TitleIcon,
   items,
@@ -138,28 +135,12 @@ function BeneficiaryCarousel({
   items: BeneficiaryItem[];
   testId: string;
 }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const itemsPerView = 4;
-  const maxIndex = Math.max(0, items.length - itemsPerView);
-
-  useEffect(() => {
-    if (isHovered) return;
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [maxIndex, isHovered]);
-
-  const goNext = () => setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
-  const goPrev = () => setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  // Unique radial layout: items arranged around a center badge.
+  // On small screens, fall back to a simple grid of chips.
+  const radius = 80; // percent of the card width used for radial placement on large screens
 
   return (
-    <Card
-      className="beneficiary-card p-6 lg:p-8 border-border/50 overflow-hidden"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <Card className="beneficiary-card p-6 lg:p-8 border-border/50 overflow-hidden">
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
           <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -167,67 +148,29 @@ function BeneficiaryCarousel({
           </div>
           {title}
         </h3>
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goPrev}
-            disabled={currentIndex === 0}
-            className="h-8 w-8"
-            data-testid={`${testId}-prev`}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goNext}
-            disabled={currentIndex >= maxIndex}
-            className="h-8 w-8"
-            data-testid={`${testId}-next`}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
       </div>
 
-      <div className="overflow-hidden">
-        <div
-          className="flex gap-3 transition-transform duration-500"
-          style={{ transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)` }}
-        >
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="flex-shrink-0 w-1/4"
-              style={{ minWidth: `calc(25% - 9px)` }}
-            >
-              <div
-                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-primary/10 hover:scale-105 transition-all duration-300 cursor-pointer group"
-                data-testid={`${testId}-${index}`}
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <item.icon className="w-6 h-6 text-primary" />
+      <div className="flex flex-col items-center">
+        {/* Center badge */}
+        
+
+        {/* Decorative mosaic grid to avoid overlap */}
+        <div className="w-full mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {items.map((item, i) => (
+              <div key={i} data-testid={`${testId}-${i}`} className="p-1">
+                <div className={`flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-primary/10 transition-all duration-200 cursor-pointer ${i % 7 === 0 ? 'lg:col-span-2' : ''}`}>
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <item.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-foreground text-xs text-center font-medium line-clamp-2">
+                    {item.label}
+                  </span>
                 </div>
-                <span className="text-foreground text-xs text-center font-medium line-clamp-2">
-                  {item.label}
-                </span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="flex justify-center gap-1 mt-4">
-        {Array.from({ length: maxIndex + 1 }).map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`h-1.5 rounded-full transition-all ${
-              index === currentIndex ? 'w-6 bg-primary' : 'w-1.5 bg-primary/30'
-            }`}
-          />
-        ))}
       </div>
     </Card>
   );
