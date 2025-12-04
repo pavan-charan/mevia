@@ -12,14 +12,17 @@ import {
 } from '@/components/ui/select';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Rocket, CheckCircle2, ArrowRight } from 'lucide-react';
+import AnimatedBackground from './AnimatedBackground';
+import { Rocket, CheckCircle2, ArrowRight, Sparkles, Star } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function WaitlistSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     company: '',
@@ -37,12 +40,32 @@ export default function WaitlistSection() {
           opacity: 1,
           y: 0,
           duration: 0.8,
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 80%',
-          },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' },
         }
       );
+
+      gsap.fromTo(
+        '.form-field',
+        { opacity: 0, x: -20 },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.5,
+          stagger: 0.1,
+          scrollTrigger: { trigger: '.waitlist-form', start: 'top 85%' },
+        }
+      );
+
+      gsap.to('.floating-star', {
+        y: 'random(-20, 20)',
+        x: 'random(-15, 15)',
+        rotation: 'random(-30, 30)',
+        duration: 'random(3, 6)',
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+        stagger: { each: 0.3, from: 'random' },
+      });
     }, sectionRef);
 
     return () => ctx.revert();
@@ -52,6 +75,11 @@ export default function WaitlistSection() {
     e.preventDefault();
     setIsLoading(true);
 
+    gsap.to(formRef.current, {
+      scale: 0.98,
+      duration: 0.2,
+    });
+
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     setIsLoading(false);
@@ -59,8 +87,22 @@ export default function WaitlistSection() {
 
     gsap.fromTo(
       '.success-content',
-      { opacity: 0, scale: 0.8 },
-      { opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }
+      { opacity: 0, scale: 0.5, rotation: -10 },
+      { opacity: 1, scale: 1, rotation: 0, duration: 0.6, ease: 'back.out(1.7)' }
+    );
+
+    gsap.fromTo(
+      '.confetti',
+      { opacity: 0, y: 0, scale: 0 },
+      {
+        opacity: 1,
+        y: 'random(-100, -200)',
+        scale: 1,
+        rotation: 'random(-180, 180)',
+        duration: 1,
+        stagger: 0.05,
+        ease: 'power2.out',
+      }
     );
 
     console.log('Form submitted:', formData);
@@ -70,10 +112,25 @@ export default function WaitlistSection() {
     <section
       ref={sectionRef}
       id="waitlist"
-      className="py-20 lg:py-32 bg-gradient-to-b from-primary/5 to-background"
+      className="py-20 lg:py-32 bg-gradient-to-b from-primary/5 to-background relative overflow-hidden"
       data-testid="section-waitlist"
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+      <AnimatedBackground variant="circles" />
+
+      <div className="floating-star absolute top-[15%] left-[10%] text-primary/20">
+        <Star className="w-8 h-8" />
+      </div>
+      <div className="floating-star absolute top-[25%] right-[15%] text-primary/15">
+        <Sparkles className="w-10 h-10" />
+      </div>
+      <div className="floating-star absolute bottom-[30%] left-[20%] text-primary/10">
+        <Star className="w-6 h-6" />
+      </div>
+      <div className="floating-star absolute bottom-[20%] right-[25%] text-primary/20">
+        <Sparkles className="w-8 h-8" />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
         <div className="waitlist-content max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <p className="text-primary font-semibold uppercase tracking-wider mb-4">
@@ -88,11 +145,23 @@ export default function WaitlistSection() {
             </p>
           </div>
 
-          <Card className="p-6 lg:p-8 border-border/50">
+          <Card className="p-6 lg:p-8 border-border/50 relative overflow-hidden bg-card/80 backdrop-blur-sm">
             {isSubmitted ? (
-              <div className="success-content text-center py-8">
-                <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle2 className="w-10 h-10 text-green-500" />
+              <div className="success-content text-center py-8 relative">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="confetti absolute left-1/2 top-1/2 w-3 h-3 rounded-full"
+                    style={{
+                      backgroundColor: ['#0053A6', '#10B981', '#F59E0B', '#EC4899'][i % 4],
+                      left: `${30 + Math.random() * 40}%`,
+                    }}
+                  />
+                ))}
+
+                <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                  <CheckCircle2 className="w-12 h-12 text-green-500" />
+                  <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
                 </div>
                 <h3 className="font-heading text-2xl font-bold text-foreground mb-3">
                   You're on the list!
@@ -103,75 +172,81 @@ export default function WaitlistSection() {
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form
+                ref={formRef}
+                onSubmit={handleSubmit}
+                className="waitlist-form space-y-5"
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className={`form-field space-y-2 transition-all duration-300 ${focusedField === 'name' ? 'scale-[1.02]' : ''}`}>
                     <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
                       placeholder="John Doe"
                       value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onFocus={() => setFocusedField('name')}
+                      onBlur={() => setFocusedField(null)}
                       required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
                       data-testid="input-name"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className={`form-field space-y-2 transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.02]' : ''}`}>
                     <Label htmlFor="email">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="john@company.com"
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onFocus={() => setFocusedField('email')}
+                      onBlur={() => setFocusedField(null)}
                       required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
                       data-testid="input-email"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className={`form-field space-y-2 transition-all duration-300 ${focusedField === 'company' ? 'scale-[1.02]' : ''}`}>
                     <Label htmlFor="company">Company Name</Label>
                     <Input
                       id="company"
                       placeholder="Acme Inc"
                       value={formData.company}
-                      onChange={(e) =>
-                        setFormData({ ...formData, company: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      onFocus={() => setFocusedField('company')}
+                      onBlur={() => setFocusedField(null)}
                       required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
                       data-testid="input-company"
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className={`form-field space-y-2 transition-all duration-300 ${focusedField === 'role' ? 'scale-[1.02]' : ''}`}>
                     <Label htmlFor="role">Your Role</Label>
                     <Input
                       id="role"
                       placeholder="Marketing Manager"
                       value={formData.role}
-                      onChange={(e) =>
-                        setFormData({ ...formData, role: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      onFocus={() => setFocusedField('role')}
+                      onBlur={() => setFocusedField(null)}
                       required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
                       data-testid="input-role"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="form-field space-y-2">
                   <Label htmlFor="companySize">Company Size</Label>
                   <Select
                     value={formData.companySize}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, companySize: value })
-                    }
+                    onValueChange={(value) => setFormData({ ...formData, companySize: value })}
                   >
-                    <SelectTrigger data-testid="select-company-size">
+                    <SelectTrigger data-testid="select-company-size" className="transition-all duration-300 focus:ring-2 focus:ring-primary/20">
                       <SelectValue placeholder="Select company size" />
                     </SelectTrigger>
                     <SelectContent>
@@ -187,21 +262,24 @@ export default function WaitlistSection() {
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full py-6 text-lg"
+                  className="form-field w-full py-6 text-lg group relative overflow-hidden"
                   disabled={isLoading}
                   data-testid="button-submit-waitlist"
                 >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <Rocket className="w-5 h-5 animate-bounce" />
-                      Joining...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      Book a Demo & Join Waitlist
-                      <ArrowRight className="w-5 h-5" />
-                    </span>
-                  )}
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {isLoading ? (
+                      <>
+                        <Rocket className="w-5 h-5 animate-bounce" />
+                        Joining...
+                      </>
+                    ) : (
+                      <>
+                        Book a Demo & Join Waitlist
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Button>
 
                 <p className="text-center text-sm text-muted-foreground">

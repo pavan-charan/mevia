@@ -1,9 +1,11 @@
-import { useRef, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { useRef, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Layers, Smartphone, Palette } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers, Smartphone, Palette, ArrowRight } from 'lucide-react';
+import InteractiveCard from './InteractiveCard';
+import AnimatedBackground from './AnimatedBackground';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -14,10 +16,12 @@ const products = [
     subtitle: 'The Now',
     status: 'LIVE NOW',
     isLive: true,
-    description:
-      'A powerful creator-marketing workspace for brands & agencies.',
+    description: 'A powerful creator-marketing workspace for brands & agencies.',
     features: [
-      'Built for managing campaigns, creators, payouts, reporting & intelligence — from one place.',
+      'Campaign management from start to finish',
+      'Creator onboarding & relationship tracking',
+      'Automated payouts & contract handling',
+      'Real-time reporting & analytics',
     ],
   },
   {
@@ -28,7 +32,10 @@ const products = [
     isLive: false,
     description: 'A dedicated app for creators across the ecosystem.',
     features: [
-      'Creators can access: brand deals, discovery, payments, contracts & workflow — all in one place.',
+      'Access brand deals instantly',
+      'Manage payments & contracts',
+      'Track deliverables & deadlines',
+      'Build your creator portfolio',
     ],
   },
   {
@@ -37,15 +44,27 @@ const products = [
     subtitle: 'Coming Soon',
     status: 'COMING SOON',
     isLive: false,
-    description:
-      'A creative command center where teams generate, create and manage content & deliverables using AI-assisted workflows.',
-    features: [],
+    description: 'Creative command center with AI-assisted workflows.',
+    features: [
+      'AI-powered content generation',
+      'Brand asset management',
+      'Collaborative editing tools',
+      'Deliverable templates & automation',
+    ],
   },
 ];
 
 export default function EcosystemSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -56,47 +75,43 @@ export default function EcosystemSection() {
           opacity: 1,
           y: 0,
           duration: 0.8,
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 80%',
-          },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' },
         }
       );
 
-      if (cardsRef.current) {
-        const cards = cardsRef.current.children;
-        Array.from(cards).forEach((card, index) => {
-          gsap.fromTo(
-            card,
-            { opacity: 0, y: 60, rotateX: -10 },
-            {
-              opacity: 1,
-              y: 0,
-              rotateX: 0,
-              duration: 0.7,
-              delay: index * 0.2,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: card,
-                start: 'top 85%',
-              },
-            }
-          );
-        });
+      if (!isMobile) {
+        gsap.fromTo(
+          '.product-card',
+          { opacity: 0, y: 60, rotateY: -15 },
+          {
+            opacity: 1,
+            y: 0,
+            rotateY: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: '.products-grid', start: 'top 85%' },
+          }
+        );
       }
     }, sectionRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [isMobile]);
+
+  const goNext = () => setActiveIndex((prev) => (prev + 1) % products.length);
+  const goPrev = () => setActiveIndex((prev) => (prev - 1 + products.length) % products.length);
 
   return (
     <section
       ref={sectionRef}
       id="products"
-      className="py-20 lg:py-32 bg-background"
+      className="py-20 lg:py-32 bg-background relative overflow-hidden"
       data-testid="section-ecosystem"
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+      <AnimatedBackground variant="circles" />
+
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
         <div className="text-center mb-16 ecosystem-heading">
           <p className="text-primary font-semibold uppercase tracking-wider mb-4">
             The Mevia Ecosystem
@@ -106,55 +121,101 @@ export default function EcosystemSection() {
           </h2>
         </div>
 
-        <div
-          ref={cardsRef}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
-        >
-          {products.map((product, index) => (
-            <Card
-              key={index}
-              className={`relative overflow-visible p-6 lg:p-8 border-t-4 ${
-                product.isLive ? 'border-t-primary' : 'border-t-muted-foreground/30'
-              } hover-elevate transition-all duration-300`}
-              data-testid={`card-product-${index}`}
-            >
-              <Badge
-                variant={product.isLive ? 'default' : 'secondary'}
-                className="absolute -top-3 left-6"
+        {isMobile ? (
+          <div className="relative">
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-500"
+                style={{ transform: `translateX(-${activeIndex * 100}%)` }}
               >
-                {product.status}
-              </Badge>
-
-              <div className="mt-4">
-                <div
-                  className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 ${
-                    product.isLive ? 'bg-primary/10' : 'bg-muted'
-                  }`}
-                >
-                  <product.icon
-                    className={`w-7 h-7 ${
-                      product.isLive ? 'text-primary' : 'text-muted-foreground'
-                    }`}
-                  />
-                </div>
-
-                <h3 className="font-heading text-xl font-bold text-foreground mb-1">
-                  {product.title}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">{product.subtitle}</p>
-
-                <p className="text-foreground/80 mb-4">{product.description}</p>
-
-                {product.features.map((feature, fIndex) => (
-                  <p key={fIndex} className="text-sm text-muted-foreground">
-                    {feature}
-                  </p>
+                {products.map((product, index) => (
+                  <div key={index} className="w-full flex-shrink-0 px-2">
+                    <ProductCard product={product} index={index} />
+                  </div>
                 ))}
               </div>
-            </Card>
-          ))}
-        </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <Button variant="outline" size="icon" onClick={goPrev} data-testid="ecosystem-prev">
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex gap-2">
+                {products.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveIndex(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      index === activeIndex ? 'w-8 bg-primary' : 'w-2 bg-primary/30'
+                    }`}
+                  />
+                ))}
+              </div>
+              <Button variant="outline" size="icon" onClick={goNext} data-testid="ecosystem-next">
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="products-grid grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {products.map((product, index) => (
+              <ProductCard key={index} product={product} index={index} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+function ProductCard({ product, index }: { product: typeof products[0]; index: number }) {
+  return (
+    <InteractiveCard
+      className={`product-card relative p-6 lg:p-8 border-t-4 h-full ${
+        product.isLive ? 'border-t-primary' : 'border-t-muted-foreground/30'
+      }`}
+      data-testid={`card-product-${index}`}
+    >
+      <Badge
+        variant={product.isLive ? 'default' : 'secondary'}
+        className="absolute -top-3 left-6"
+      >
+        {product.status}
+      </Badge>
+
+      <div className="mt-4">
+        <div
+          className={`w-16 h-16 rounded-xl flex items-center justify-center mb-4 ${
+            product.isLive ? 'bg-primary/10' : 'bg-muted'
+          }`}
+        >
+          <product.icon
+            className={`w-8 h-8 ${product.isLive ? 'text-primary' : 'text-muted-foreground'}`}
+          />
+        </div>
+
+        <h3 className="font-heading text-xl font-bold text-foreground mb-1">
+          {product.title}
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">{product.subtitle}</p>
+        <p className="text-foreground/80 mb-6">{product.description}</p>
+
+        <ul className="space-y-2 mb-6">
+          {product.features.map((feature, fIndex) => (
+            <li key={fIndex} className="flex items-start gap-2 text-sm text-muted-foreground">
+              <ArrowRight className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+              {feature}
+            </li>
+          ))}
+        </ul>
+
+        {product.isLive && (
+          <Button className="w-full group">
+            Get Started
+            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        )}
+      </div>
+    </InteractiveCard>
   );
 }

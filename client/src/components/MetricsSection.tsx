@@ -1,7 +1,8 @@
-import { useRef, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { useRef, useEffect, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import AnimatedBackground from './AnimatedBackground';
+import InteractiveCard from './InteractiveCard';
 import {
   TrendingDown,
   Zap,
@@ -16,26 +17,10 @@ import {
 gsap.registerPlugin(ScrollTrigger);
 
 const metrics = [
-  {
-    value: '60-70%',
-    label: 'Reduction in ops load',
-    icon: TrendingDown,
-  },
-  {
-    value: '40%',
-    label: 'Faster campaign execution',
-    icon: Zap,
-  },
-  {
-    value: '3×',
-    label: 'Improvement in deadline compliance',
-    icon: Target,
-  },
-  {
-    value: 'Zero',
-    label: 'Payment confusion',
-    icon: Wallet,
-  },
+  { value: 70, suffix: '%', prefix: '60-', label: 'Reduction in ops load', icon: TrendingDown },
+  { value: 40, suffix: '%', prefix: '', label: 'Faster campaign execution', icon: Zap },
+  { value: 3, suffix: '×', prefix: '', label: 'Improvement in deadline compliance', icon: Target },
+  { value: 0, suffix: '', prefix: 'Zero', label: 'Payment confusion', icon: Wallet, isText: true },
 ];
 
 const additionalBenefits = [
@@ -44,6 +29,55 @@ const additionalBenefits = [
   { icon: Users, text: 'Complete transparency across teams' },
   { icon: Heart, text: 'Improved creator relationships through timely payouts & clarity' },
 ];
+
+function AnimatedCounter({ value, suffix, prefix, isText }: { value: number; suffix: string; prefix: string; isText?: boolean }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (!ref.current || isText) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimated.current) {
+            hasAnimated.current = true;
+            const duration = 2000;
+            const start = Date.now();
+
+            const animate = () => {
+              const elapsed = Date.now() - start;
+              const progress = Math.min(elapsed / duration, 1);
+              const eased = 1 - Math.pow(1 - progress, 3);
+              setCount(Math.round(eased * value));
+
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              }
+            };
+
+            requestAnimationFrame(animate);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [value, isText]);
+
+  if (isText) {
+    return <span ref={ref}>{prefix}</span>;
+  }
+
+  return (
+    <span ref={ref}>
+      {prefix}{count}{suffix}
+    </span>
+  );
+}
 
 export default function MetricsSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -57,56 +91,23 @@ export default function MetricsSection() {
           opacity: 1,
           y: 0,
           duration: 0.8,
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 80%',
-          },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' },
         }
       );
 
-      const metrics = document.querySelectorAll('.metric-card');
-      metrics.forEach((metric, index) => {
-        gsap.fromTo(
-          metric,
-          { opacity: 0, y: 50, scale: 0.9 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.6,
-            delay: index * 0.15,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: metric,
-              start: 'top 85%',
-            },
-          }
-        );
-
-        const valueEl = metric.querySelector('.metric-value');
-        if (valueEl) {
-          const value = valueEl.textContent || '';
-          const numMatch = value.match(/\d+/);
-          if (numMatch) {
-            const targetNum = parseInt(numMatch[0]);
-            const obj = { val: 0 };
-            gsap.to(obj, {
-              val: targetNum,
-              duration: 2,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: metric,
-                start: 'top 85%',
-              },
-              onUpdate: () => {
-                if (valueEl) {
-                  valueEl.textContent = value.replace(/\d+/, Math.round(obj.val).toString());
-                }
-              },
-            });
-          }
+      gsap.fromTo(
+        '.metric-card',
+        { opacity: 0, y: 50, scale: 0.9 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          stagger: 0.15,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.metrics-grid', start: 'top 85%' },
         }
-      });
+      );
 
       gsap.fromTo(
         '.benefit-item',
@@ -116,10 +117,7 @@ export default function MetricsSection() {
           x: 0,
           duration: 0.5,
           stagger: 0.1,
-          scrollTrigger: {
-            trigger: '.benefits-grid',
-            start: 'top 85%',
-          },
+          scrollTrigger: { trigger: '.benefits-grid', start: 'top 85%' },
         }
       );
     }, sectionRef);
@@ -131,10 +129,12 @@ export default function MetricsSection() {
     <section
       ref={sectionRef}
       id="why-mevia"
-      className="py-20 lg:py-32 bg-gradient-to-b from-primary/5 to-background"
+      className="py-20 lg:py-32 bg-gradient-to-b from-primary/5 to-background relative overflow-hidden"
       data-testid="section-metrics"
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+      <AnimatedBackground variant="grid" />
+
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
         <div className="text-center mb-16 metrics-heading">
           <p className="text-primary font-semibold uppercase tracking-wider mb-4">
             Why Adopting Mevia Studio Changes Everything
@@ -146,21 +146,26 @@ export default function MetricsSection() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div className="metrics-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {metrics.map((metric, index) => (
-            <Card
+            <InteractiveCard
               key={index}
-              className="metric-card p-6 text-center hover-elevate transition-all duration-300 border-border/50"
+              className="metric-card p-6 text-center border-border/50"
               data-testid={`card-metric-${index}`}
             >
-              <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <metric.icon className="w-7 h-7 text-primary" />
+              <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <metric.icon className="w-8 h-8 text-primary" />
               </div>
-              <p className="metric-value text-4xl md:text-5xl font-heading font-bold text-primary mb-2">
-                {metric.value}
+              <p className="text-4xl md:text-5xl font-heading font-bold text-primary mb-2">
+                <AnimatedCounter
+                  value={metric.value}
+                  suffix={metric.suffix}
+                  prefix={metric.prefix}
+                  isText={metric.isText}
+                />
               </p>
               <p className="text-muted-foreground text-sm">{metric.label}</p>
-            </Card>
+            </InteractiveCard>
           ))}
         </div>
 
@@ -168,9 +173,9 @@ export default function MetricsSection() {
           {additionalBenefits.map((benefit, index) => (
             <div
               key={index}
-              className="benefit-item flex items-center gap-3 p-4 rounded-lg bg-card border border-border/30"
+              className="benefit-item flex items-center gap-3 p-4 rounded-lg bg-card border border-border/30 hover:border-primary/30 hover:bg-card/80 transition-all duration-300 cursor-pointer group"
             >
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
                 <benefit.icon className="w-5 h-5 text-primary" />
               </div>
               <p className="text-foreground text-sm font-medium">{benefit.text}</p>

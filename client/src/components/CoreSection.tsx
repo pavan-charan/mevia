@@ -7,6 +7,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function CoreSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const orbsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -17,29 +18,42 @@ export default function CoreSection() {
           opacity: 1,
           y: 0,
           duration: 0.8,
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 75%',
-          },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 75%' },
         }
       );
 
       gsap.fromTo(
         '.core-icon',
-        { opacity: 0, scale: 0.8, rotation: -10 },
+        { opacity: 0, scale: 0, rotation: -180 },
         {
           opacity: 1,
           scale: 1,
           rotation: 0,
-          duration: 0.6,
+          duration: 0.8,
           stagger: 0.15,
           ease: 'back.out(1.7)',
-          scrollTrigger: {
-            trigger: '.core-icons',
-            start: 'top 80%',
-          },
+          scrollTrigger: { trigger: '.core-icons', start: 'top 80%' },
         }
       );
+
+      gsap.to('.orb', {
+        y: 'random(-40, 40)',
+        x: 'random(-30, 30)',
+        scale: 'random(0.8, 1.2)',
+        duration: 'random(4, 8)',
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+        stagger: { each: 0.5, from: 'random' },
+      });
+
+      gsap.to('.pulse-ring', {
+        scale: 1.5,
+        opacity: 0,
+        duration: 2,
+        repeat: -1,
+        stagger: 0.4,
+      });
     }, sectionRef);
 
     return () => ctx.revert();
@@ -52,13 +66,21 @@ export default function CoreSection() {
       data-testid="section-core"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/90" />
-      <div className="absolute top-0 left-0 w-full h-full opacity-10">
-        <div className="absolute top-10 left-10 w-32 h-32 border border-white/30 rounded-full" />
-        <div className="absolute bottom-20 right-20 w-48 h-48 border border-white/20 rounded-full" />
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 border border-white/10 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
+      
+      <div ref={orbsRef} className="absolute inset-0 overflow-hidden">
+        <div className="orb absolute top-[10%] left-[10%] w-40 h-40 bg-white/5 rounded-full blur-2xl" />
+        <div className="orb absolute top-[60%] right-[10%] w-60 h-60 bg-white/8 rounded-full blur-3xl" />
+        <div className="orb absolute bottom-[20%] left-[30%] w-32 h-32 bg-white/4 rounded-full blur-xl" />
+        <div className="orb absolute top-[30%] right-[30%] w-48 h-48 bg-white/6 rounded-full blur-2xl" />
+        
+        <div className="absolute top-[15%] left-[15%] w-64 h-64 border border-white/10 rounded-full" />
+        <div className="absolute top-[15%] left-[15%] w-64 h-64 border border-white/5 rounded-full pulse-ring" />
+        <div className="absolute bottom-[25%] right-[20%] w-48 h-48 border border-white/10 rounded-full" />
+        <div className="absolute bottom-[25%] right-[20%] w-48 h-48 border border-white/5 rounded-full pulse-ring" />
+        <div className="absolute top-1/2 left-1/2 w-80 h-80 border border-white/5 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-12 z-10">
         <div className="text-center core-content">
           <p className="text-white/80 font-semibold uppercase tracking-wider mb-4">
             Our Driving Force
@@ -82,12 +104,17 @@ export default function CoreSection() {
           ].map((item, index) => (
             <div
               key={index}
-              className="core-icon flex flex-col items-center text-center"
+              className="core-icon flex flex-col items-center text-center group cursor-pointer"
             >
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-3">
-                <item.icon className="w-8 h-8 text-white" />
+              <div className="relative">
+                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300 border border-white/20">
+                  <item.icon className="w-10 h-10 text-white" />
+                </div>
+                <div className="absolute inset-0 bg-white/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity" />
               </div>
-              <span className="font-medium text-white/90">{item.label}</span>
+              <span className="font-medium text-white/90 mt-4 group-hover:text-white transition-colors">
+                {item.label}
+              </span>
             </div>
           ))}
         </div>
